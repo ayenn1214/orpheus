@@ -1,8 +1,15 @@
-# Orpheus
+<p align="center">
+  <img src="docs/logo.png" width="150" alt="Orpheus logo">
+</p>
 
-**Speakers that follow your ears.** A webcam finds the listener's head and ears in 3D; motorised pan/tilt stands keep every speaker aimed at its ear, and the audio is re-timed and filtered for where the listener actually is. Stereo, 5.1 and 7.1.
+<h1 align="center">Orpheus</h1>
 
-*Orpheus played so the world turned toward him. Here the speakers do.*
+<p align="center">
+Speakers that follow your ears.<br>
+<em>Orpheus played so the world turned toward him. Here the speakers do.</em>
+</p>
+
+A webcam finds the listener's head and ears in 3D; motorised pan/tilt stands keep every speaker aimed at its ear, and the audio is re-timed and filtered for where the listener actually is. Stereo, 5.1 and 7.1.
 
 Version 0.8.1. Python rebuild of *Real Time Facial Tracking for Speaker Stands* (A. Narula, Manipal University Dubai, 2017), extended to the two goals the original report set out but could not reach: **locating the listener's ears** and **applying HRTFs**.
 
