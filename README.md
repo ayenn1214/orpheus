@@ -9,6 +9,8 @@ Speakers that follow your ears.<br>
 <em>Orpheus played so the world turned toward him. Here the speakers do.</em>
 </p>
 
+<p align="center"><a href="https://ayenn1214.github.io/orpheus/"><b>▶ Try the 3D simulator in your browser</b></a></p>
+
 A webcam finds the listener's head and ears in 3D; motorised pan/tilt stands keep every speaker aimed at its ear, and the audio is re-timed and filtered for where the listener actually is. Stereo, 5.1 and 7.1.
 
 Version 0.8.1. Python rebuild of *Real Time Facial Tracking for Speaker Stands* (A. Narula, Manipal University Dubai, 2017), extended to the two goals the original report set out but could not reach: **locating the listener's ears** and **applying HRTFs**.
@@ -287,7 +289,7 @@ orpheus/
   config.py     nested dataclass config, JSON load/save
   protocol.py, link.py, filters.py, app.py
 firmware/orpheus_stand/orpheus_stand.ino
-sim/stand_bench.html   3D browser simulator (Speaker Stand Bench): open the file directly
+sim/stand_bench.html   3D browser simulator (Speaker Stand Bench): open the file directly, or use the hosted demo
 tests/          87 tests: protocol, geometry, PnP/ears, enrollment (scale, triangulation,
                 outlier clicks, profile round-trip, stored vs generic, return-to-seat),
                 HRTF vs theory, SOFA round-trip, XTC separation, align timing,
