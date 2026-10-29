@@ -1,0 +1,11 @@
+Orpheus
+Copyright 2026 Ankur Narula
+
+This product includes software developed by Ankur Narula, rebuilt from his
+2017 Manipal University Dubai project "Real Time Facial Tracking for
+Speaker Stands".
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Model files used at run time (YuNet, SFace, MediaPipe Face Landmarker, SOFA
+HRTF sets) are not included and are distributed under their own licences.

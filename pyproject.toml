@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orpheus"
+version = "0.8.1"
+description = "Orpheus: ear-tracking pan/tilt speaker stands with listener-tracked HRTF, stereo to 7.1"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Ankur Narula" }]
+dependencies = ["opencv-python>=4.8,<5", "numpy>=1.24", "scipy>=1.10", "pyserial>=3.5", "sounddevice>=0.4", "soundfile>=0.12"]
+
+[project.optional-dependencies]
+sofa = ["h5py>=3.8"]
+mediapipe = ["mediapipe>=0.10.14"]
+realsense = ["pyrealsense2>=2.55"]
+oakd = ["depthai>=3.0"]
+
+[project.scripts]
+orpheus = "orpheus.app:main"
+
+[tool.setuptools]
+packages = ["orpheus"]

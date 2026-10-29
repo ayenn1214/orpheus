@@ -1,0 +1,1076 @@
+<title>Speaker Stand Bench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: instrument bench - 3D stage on the left, readout rack + response plot on the right; stacks on phones. */
+:root {
+  --bg: #e9ecee;
+  --panel: #f6f7f8;
+  --ink: #17212b;
+  --muted: #5d6a76;
+  --rule: #cdd4da;
+  --amber: #c26a12;      /* speakers, aim, accent */
+  --teal: #11807d;       /* ears, listener */
+  --plum: #8a3f6e;       /* fixed / untracked series */
+  --stage: #dfe4e8;
+  --good: #2e7d4f; --warn: #a8660c; --bad: #b23a3a;
+  --f-display: "Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12171c; --panel: #1a2128; --ink: #e3e8ec; --muted: #94a2ae; --rule: #2c3640;
+  --amber: #f0a04b; --teal: #4cc7c2; --plum: #d888bb; --stage: #161c22;
+  --good: #63c48b; --warn: #e2a64a; --bad: #ec7b7b; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12171c; --panel: #1a2128; --ink: #e3e8ec; --muted: #94a2ae; --rule: #2c3640;
+  --amber: #f0a04b; --teal: #4cc7c2; --plum: #d888bb; --stage: #161c22;
+  --good: #63c48b; --warn: #e2a64a; --bad: #ec7b7b; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-block: 18px 32px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: 30px; letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); max-width: 72ch; margin: 0; }
+.tag { font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  border: 1px solid var(--rule); border-radius: 3px; padding: 2px 6px; }
+
+.realism { background: var(--stage); }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; padding: 10px 14px;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+.ctl { display: flex; align-items: center; gap: 8px; }
+.ctl > span { font-family: var(--f-display); font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: 5px; overflow: hidden; }
+.seg button { font: 500 13px var(--f-body); color: var(--ink); background: transparent; border: 0; padding: 5px 10px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+input[type=range] { width: 120px; accent-color: var(--amber); }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+output.mono { min-width: 4.5ch; display: inline-block; }
+
+.bench { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .bench { grid-template-columns: minmax(0, 1fr); } }
+.stage { background: var(--stage); border: 1px solid var(--rule); border-radius: 6px; position: relative; min-width: 0; overflow: hidden; }
+.stage .gl { display: block; width: 100%; aspect-ratio: 4 / 3.4; max-width: 100%; touch-action: none; cursor: grab; }
+.stage .views { position: absolute; top: 10px; right: 10px; background: var(--panel); }
+.stage .hint { position: absolute; left: 12px; bottom: 10px; right: 12px; font-size: 12px; color: var(--muted); pointer-events: none; }
+.stage .status { position: absolute; left: 12px; top: 10px; font-family: var(--f-display); font-weight: 600; font-size: 15px; pointer-events: none; }
+.side { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; min-width: 0; }
+.card h2 { font-family: var(--f-display); font-weight: 600; font-size: 15px; letter-spacing: .07em; text-transform: uppercase; margin: 0 0 8px; color: var(--muted); }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.kpi { display: grid; gap: 2px; }
+.kpi b { font-family: var(--f-display); font-weight: 700; font-size: 26px; font-variant-numeric: tabular-nums; }
+.kpi small { color: var(--muted); font-size: 12px; }
+.ok { color: var(--good); } .mid { color: var(--warn); } .low { color: var(--bad); }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-family: var(--f-display); font-weight: 600; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+td { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.plot canvas { width: 100%; height: auto; aspect-ratio: 16 / 9; display: block; max-width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.legend i { display: inline-block; width: 16px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.key { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--muted); }
+.key i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: -1px; margin-right: 5px; }
+.editor { display: grid; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--rule); }
+.erow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.erow label { font-size: 12px; color: var(--muted); }
+.erow input[type=number], .erow select { font: 500 13px var(--f-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 4px; padding: 3px 6px; }
+.erow input[type=number] { width: 7ch; }
+.erow .unit { font-size: 12px; color: var(--muted); margin-left: -6px; }
+.erow .chk { display: inline-flex; align-items: center; gap: 5px; color: var(--ink); }
+.btn { font: 500 13px var(--f-body); color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 5px; padding: 4px 10px; cursor: pointer; }
+.btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+#ed-json { width: 100%; box-sizing: border-box; font-size: 11px; color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 4px; }
+select:focus-visible, textarea:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.note { font-size: 12px; color: var(--muted); max-width: 78ch; margin: 0; }
+.fallback { padding: 24px; color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Speaker Stand Bench</h1>
+    <span class="tag">3D · spherical-head HRTF · free field</span>
+    <p class="sub">The tracker running in your browser on a simulated listener. Move, raise, turn and tilt the head; the stands pan and tilt onto each ear. A hard line means the beam is on a seen ear, a dotted line means it is aimed at a virtual ear placed from the eyes and the stored offset.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Simulation controls">
+    <div class="ctl"><span>Layout</span>
+      <div class="seg" id="layout">
+        <button id="y-st" aria-pressed="true">Stereo</button>
+        <button id="y-51" aria-pressed="false">5.1</button>
+        <button id="y-71" aria-pressed="false">7.1</button>
+      </div>
+    </div>
+    <div class="ctl"><span>Motion</span>
+      <div class="seg" id="motion">
+        <button id="m-drag" aria-pressed="false">Manual</button>
+        <button id="m-sway" aria-pressed="true">Sway</button>
+      </div>
+    </div>
+    <div class="ctl"><span>Yaw</span>
+      <input id="yaw" type="range" min="-60" max="60" step="1" value="0" aria-label="Head turn in degrees">
+      <output id="yaw-out" class="mono">+0°</output>
+    </div>
+    <div class="ctl"><span>Pitch</span>
+      <input id="pitch" type="range" min="-30" max="30" step="1" value="0" aria-label="Head nod in degrees, up is positive">
+      <output id="pitch-out" class="mono">+0°</output>
+    </div>
+    <div class="ctl"><span>Height</span>
+      <input id="height" type="range" min="-200" max="200" step="5" value="0" aria-label="Head height relative to the speakers in millimetres">
+      <output id="height-out" class="mono">+0 mm</output>
+    </div>
+    <div class="ctl"><span>Ears</span>
+      <div class="seg" id="ears">
+        <button id="e-prof" aria-pressed="false">Enrolled profile</button>
+        <button id="e-gen" aria-pressed="false">Generic model</button>
+        <button id="e-eyes" aria-pressed="false">Eyes + offset</button>
+        <button id="e-seen" aria-pressed="true">Eyes + seen ear</button>
+      </div>
+    </div>
+    <div class="ctl"><span>Tracking noise</span>
+      <input id="noise" type="range" min="0" max="20" step="1" value="3" aria-label="Tracking noise in millimetres">
+      <output id="noise-out" class="mono">3 mm</output>
+    </div>
+    <div class="ctl"><span>Aim</span>
+      <div class="seg" id="aim">
+        <button id="a-ear" aria-pressed="true">Own ear</button>
+        <button id="a-head" aria-pressed="false">Head</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls realism" role="group" aria-label="Realism">
+    <div class="ctl"><span>Sway speed</span>
+      <input id="speed" type="range" min="0.5" max="4" step="0.5" value="1" aria-label="Sway speed multiplier">
+      <output id="speed-out" class="mono">1×</output>
+    </div>
+    <div class="ctl"><span>Track lag</span>
+      <input id="lag" type="range" min="0" max="200" step="10" value="80" aria-label="Camera and tracking latency in milliseconds">
+      <output id="lag-out" class="mono">80 ms</output>
+    </div>
+    <div class="ctl"><span>Lead</span>
+      <input id="lead" type="range" min="0" max="200" step="10" value="100" aria-label="Aim-ahead time in milliseconds">
+      <output id="lead-out" class="mono">100 ms</output>
+    </div>
+    <div class="ctl"><span>Backlash</span>
+      <input id="backlash" type="range" min="0" max="4" step="0.5" value="1.5" aria-label="Servo gear backlash in degrees">
+      <output id="backlash-out" class="mono">1.5°</output>
+    </div>
+    <div class="ctl"><span>Dropout</span>
+      <input id="dropout" type="range" min="0" max="60" step="5" value="10" aria-label="Share of frames where detection fails, percent">
+      <output id="dropout-out" class="mono">10 %</output>
+    </div>
+    <div class="ctl"><span>Pan limit</span>
+      <input id="panlim" type="range" min="20" max="90" step="5" value="60" aria-label="Pan travel either side of straight ahead, degrees">
+      <output id="panlim-out" class="mono">±60°</output>
+    </div>
+    <div class="ctl"><span>Tilt limit</span>
+      <input id="tiltlim" type="range" min="10" max="45" step="5" value="30" aria-label="Tilt travel up and down, degrees">
+      <output id="tiltlim-out" class="mono">±30°</output>
+    </div>
+    <div class="ctl"><span>Room</span>
+      <div class="seg">
+        <button id="t-desk" aria-pressed="false">Desk reflection</button>
+        <button id="t-cone" aria-pressed="true">Directivity</button>
+      </div>
+    </div>
+    <div class="ctl"><span>Listeners</span>
+      <div class="seg" id="lis">
+        <button id="l-one" aria-pressed="true">One</button>
+        <button id="l-main" aria-pressed="false">Two · main</button>
+        <button id="l-mid" aria-pressed="false">Two · midpoint</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bench">
+    <div class="stage">
+      <canvas id="gl" class="gl" tabindex="0" aria-label="3D view of the camera, two pan-tilt speaker stands and the listener's head"></canvas>
+      <div class="seg views" id="views">
+        <button id="v-orbit" aria-pressed="true">3D</button>
+        <button id="v-top" aria-pressed="false">Top</button>
+        <button id="v-side" aria-pressed="false">Side</button>
+      </div>
+      <div class="status" id="status"></div>
+      <div class="hint" id="hint">Drag to orbit, scroll to zoom. Drag the head to move it (arrow keys nudge it). With "Drag in 3D" on, drag any speaker across the floor; it snaps to the chosen grid (hold Alt to place freely).</div>
+    </div>
+
+    <div class="side">
+      <div class="card">
+        <h2 id="kpi-title">Crosstalk cancellation, 200 Hz – 6 kHz</h2>
+        <div class="kpis">
+          <div class="kpi"><b id="k-track" class="mono">–</b><small id="k-track-l">filters follow you</small></div>
+          <div class="kpi"><b id="k-fixed" class="mono">–</b><small id="k-fixed-l">filters fixed at seat</small></div>
+          <div class="kpi"><b id="k-ceil" class="mono">–</b><small id="k-ceil-l">perfect knowledge</small></div>
+        </div>
+      </div>
+
+      <div class="card plot">
+        <h2 id="plot-title">Channel separation at the ears</h2>
+        <canvas id="plot" width="800" height="450" aria-label="Separation in dB versus frequency"></canvas>
+        <div class="legend" id="legend">
+          <span><i style="background:var(--teal)"></i>tracked, current ear model + noise</span>
+          <span><i style="background:var(--plum)"></i>fixed at the enrolled seat</span>
+          <span><i style="background:var(--muted)"></i>perfect knowledge</span>
+        </div>
+        <p class="note" id="plot-note" style="margin-top:6px"></p>
+      </div>
+
+      <div class="card">
+        <h2>Stands</h2>
+        <div class="tbl"><table>
+          <thead><tr><th>Stand</th><th>Ear</th><th>Beam</th><th>Pan</th><th>Tilt</th><th>Off-axis</th><th>To L ear</th><th>To R ear</th><th>Delay</th><th>Gain</th></tr></thead>
+          <tbody id="stands"></tbody>
+        </table></div>
+        <div class="editor" id="editor">
+          <div class="erow">
+            <label for="ed-which">Speaker</label>
+            <select id="ed-which"></select>
+            <button id="ed-move" class="btn" aria-pressed="false">Drag in 3D</button>
+            <label for="ed-snap">Snap</label>
+            <select id="ed-snap">
+              <option value="0">Off</option>
+              <option value="10">10 mm</option>
+              <option value="25">25 mm</option>
+              <option value="50" selected>50 mm</option>
+              <option value="100">100 mm (grid)</option>
+            </select>
+          </div>
+          <div class="erow">
+            <label for="ed-x">Left / right</label><input id="ed-x" type="number" step="10"><span class="unit">mm</span>
+            <label for="ed-z">From camera</label><input id="ed-z" type="number" step="10"><span class="unit">mm</span>
+            <label for="ed-h">Height</label><input id="ed-h" type="number" step="10"><span class="unit">mm</span>
+          </div>
+          <div class="erow">
+            <label for="ed-yaw">Facing</label><input id="ed-yaw" type="number" step="1"><span class="unit">°</span>
+            <label class="chk"><input id="ed-face" type="checkbox"> face the seat</label>
+            <button id="ed-reset" class="btn">Reset layout</button>
+            <button id="ed-copy" class="btn">Copy as config</button>
+          </div>
+          <textarea id="ed-json" class="mono" rows="5" readonly hidden aria-label="Stands as config JSON"></textarea>
+          <p class="note" id="ed-msg">Left / right: + is the listener's left (camera's right). Height: + is up from the speaker axis. Facing: 0° points away from the camera.</p>
+        </div>
+        <div class="key" style="margin-top:8px">
+          <span><i style="background:var(--teal)"></i>true ear</span>
+          <span><i style="background:var(--good)"></i>seen ear (image)</span>
+          <span><i style="border:2px solid var(--muted)"></i>virtual ear (eyes + offset)</span>
+          <span><i style="width:18px;height:3px;border-radius:2px;background:var(--amber)"></i>beam on a seen ear</span>
+          <span><i style="width:18px;height:3px;border-radius:0;background:repeating-linear-gradient(90deg,var(--amber) 0 3px,transparent 3px 7px)"></i>beam at a virtual ear</span>
+        </div>
+      </div>
+
+      <p class="note">Rigid-sphere HRTF (Brown–Duda) in full 3D, Tikhonov-regularised 2×2 inverse, stands 300 mm either side of the camera at speaker height, servos slewing at 120°/s on both axes. The tracker sees the head <em>Track lag</em> late; <em>Lead</em> aims ahead by extrapolating each ear's velocity. Backlash is gear play the servo must take up before the speaker turns. Dropout drops detection frames, and the tracker holds its last estimate. Speakers radiate as a 50 mm piston: the cone is the −3 dB coverage at 6 kHz, and off-axis treble loss is included in the acoustics. The desk is a surface 160 mm below the speaker axis reflecting 60 %; the filters assume free field, so the reflection caps separation for every curve. With two listeners, crosstalk cancellation turns off and the speakers time-align instead. 5.1 and 7.1 place stands at the ITU / Dolby angles around the seat (fronts ±30°, centre below the camera, 5.1 surrounds ±110°, 7.1 sides ±90° and backs ±150°) with a fixed subwoofer; every speaker aims at its own ear (centre at the head) and is delayed so all arrive together. The true ears are an enrolled profile (153.6 mm apart, 7 mm below and 8 mm behind the generic positions). Two eye points show neither turn nor nod, so "Eyes + offset" drifts in both; "Eyes + seen ear" recovers the head pose once an ear faces the camera (turned 20° or more). Real rooms add reflections that cap separation near 10–20 dB.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  // ================================================================= model
+  // Camera frame as in the Python package: +X camera's right, +Y down, +Z toward the
+  // listener. Head frame: +X left ear, +Y down, +Z back of head (nose along -Z).
+  const C = 343;
+  // Stand layouts. Stereo: the classic pair beside the camera. 5.1/7.1: ITU-R BS.775 /
+  // Dolby angles on a circle around the seat (+ = listener's left = camera +X), each stand's
+  // zero direction (yaw0) facing the seat - same as Config.preset in the Python package.
+  const SEAT_Z = 690;
+  const PLACE = { FL: [30, "L"], FR: [-30, "R"], FC: [0, "C"], SL: [110, "L"], SR: [-110, "R"] };
+  const PLACE71 = { ...PLACE, SL: [90, "L"], SR: [-90, "R"], BL: [150, "L"], BR: [-150, "R"] };
+  function placeStand(layout, ch) {
+    const [ang, ear] = (layout === "7.1" ? PLACE71 : PLACE)[ch];
+    const a = ang * Math.PI / 180;
+    let x = SEAT_Z * Math.sin(a), z = SEAT_Z - SEAT_Z * Math.cos(a), y = 0;
+    if (ch === "FC") { y = 150; z = Math.max(z, 120); }      // under the camera, in front of the screen
+    const yaw0 = Math.atan2(-x, SEAT_Z - z) * 180 / Math.PI;
+    return { name: ch, p: [x, y, z], ear, yaw0, face: true };
+  }
+  const LAYOUTS = {
+    stereo: [{ name: "left", p: [300, 0, 0], ear: "L", yaw0: 0, face: false }, { name: "right", p: [-300, 0, 0], ear: "R", yaw0: 0, face: false }],
+    "5.1": ["FL", "FR", "FC", "SL", "SR"].map(c => placeStand("5.1", c)),
+    "7.1": ["FL", "FR", "FC", "BL", "BR", "SL", "SR"].map(c => placeStand("7.1", c)),
+  };
+  const SUB_HOME = [0, 350, 300];
+  const SUB = { name: "LFE", p: [...SUB_HOME], ear: "C", sub: true };
+  let SPK = LAYOUTS.stereo, LAYOUT = "stereo";
+  const faceSeat = s => { s.yaw0 = Math.atan2(-s.p[0], SEAT_Z - s.p[2]) * 180 / Math.PI; };
+  const cloneLayout = name => LAYOUTS[name].map(s => ({ ...s, p: [...s.p] }));
+  const DRIVER_OFFSET = 60;
+  const TRUE_EARS = { L: [79, 7, 10], R: [-75, 5, 6] };
+  const GENERIC_EARS = { L: [72.5, 0, 0], R: [-72.5, 0, 0] };
+  const R_TRUE = 0.094, R_GENERIC = 0.0905;
+  const EYE_MID = [0, -10.7, -87.7];
+  const SEAT = { x: 0, y: 0, z: 690, yaw: 0, pitch: 0 };
+  const FREQS = Array.from({ length: 48 }, (_, i) => 200 * Math.pow(6000 / 200, i / 47));
+
+  const v3 = {
+    add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+    sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+    mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k],
+    len: a => Math.hypot(a[0], a[1], a[2]),
+    mid: (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2],
+  };
+  const D2R = Math.PI / 180;
+  // R = Ry(-yaw) Rx(-pitch): yaw > 0 faces camera +X, pitch > 0 looks up (Python rotation_from_ypr)
+  function rot(yaw, pitch) {
+    const a = -yaw * D2R, b = -pitch * D2R, ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
+    return [[ca, sa * sb, sa * cb], [0, cb, -sb], [-sa, ca * sb, ca * cb]];
+  }
+  const mv = (M, p) => [M[0][0] * p[0] + M[0][1] * p[1] + M[0][2] * p[2],
+                        M[1][0] * p[0] + M[1][1] * p[1] + M[1][2] * p[2],
+                        M[2][0] * p[0] + M[2][1] * p[1] + M[2][2] * p[2]];
+  const mtv = (M, p) => [M[0][0] * p[0] + M[1][0] * p[1] + M[2][0] * p[2],
+                         M[0][1] * p[0] + M[1][1] * p[1] + M[2][1] * p[2],
+                         M[0][2] * p[0] + M[1][2] * p[1] + M[2][2] * p[2]];
+
+  function listener(h, ears, radius) {
+    const R = rot(h.yaw, h.pitch), o = [h.x, h.y, h.z];
+    const L = v3.add(mv(R, ears.L), o), Rr = v3.add(mv(R, ears.R), o);
+    return { L, R: Rr, c: v3.mid(L, Rr), M: R, radius, origin: o };
+  }
+
+  // complex helpers [re, im]
+  const cm = (a, b) => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
+  const ca = (a, b) => [a[0] + b[0], a[1] + b[1]];
+  const cs = (a, b) => [a[0] - b[0], a[1] - b[1]];
+  const cc = a => [a[0], -a[1]];
+  const cabs = a => Math.hypot(a[0], a[1]);
+  const cdiv = (a, b) => { const d = b[0] * b[0] + b[1] * b[1]; return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d]; };
+  const cexp = ph => [Math.cos(ph), Math.sin(ph)];
+  const cr = (a, k) => [a[0] * k, a[1] * k];
+
+  function earResp(cosInc, f, a) {        // Brown-Duda rigid sphere, one ear
+    const th = Math.acos(Math.max(-1, Math.min(1, cosInc)));
+    const w = 2 * Math.PI * f, w0 = C / a, am = 0.1, thMin = 150 * D2R;
+    const alpha = (1 + am / 2) + (1 - am / 2) * Math.cos(th / thMin * Math.PI);
+    const shadow = cdiv([1, alpha * w / (2 * w0)], [1, w / (2 * w0)]);
+    const T = th < Math.PI / 2 ? -a / C * Math.cos(th) : a / C * (th - Math.PI / 2);
+    return cm(shadow, cexp(-w * T));
+  }
+  // ---- room + speaker realism
+  const DESK_Y = 160, DESK_REFL = 0.6;               // desk 160 mm below the speaker axis (+Y down)
+  const PISTON_A = 0.025;                            // 50 mm effective radiator
+  function besselJ1(x) {                             // power series, fine for x < ~10
+    let term = x / 2, sum = term;
+    for (let m = 0; m < 30; m++) { term *= -(x * x / 4) / ((m + 1) * (m + 2)); sum += term; }
+    return sum;
+  }
+  function directivity(cosang, f) {                  // rigid piston in a baffle, magnitude
+    const th = Math.acos(Math.max(-1, Math.min(1, cosang)));
+    const x = 2 * Math.PI * f / C * PISTON_A * Math.sin(Math.min(th, Math.PI / 2));
+    const d = x < 1e-6 ? 1 : Math.abs(2 * besselJ1(x) / x);
+    return th > Math.PI / 2 ? Math.max(d * 0.4, 0.05) : Math.max(d, 0.05);   // behind the box: weaker
+  }
+  const unitv = a => v3.mul(a, 1 / Math.max(v3.len(a), 1e-9));
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  // -3 dB coverage half-angle at 6 kHz, for the cone drawing
+  const CONE_DEG = (() => { for (let a = 1; a < 89; a += 0.5) if (directivity(Math.cos(a * D2R), 6000) < 0.7071) return a; return 89; })();
+
+  // G[ear][speaker]: direct path (+ desk image source), sphere HRTF, speaker directivity
+  function plant(lis, drivers, f, opt = {}) {
+    const paths = [];
+    drivers.forEach((p, s) => {
+      paths.push({ s, src: p, axis: opt.axes ? opt.axes[s] : null, g: 1 });
+      if (opt.desk) {
+        const ax = opt.axes ? opt.axes[s] : null;
+        paths.push({ s, src: [p[0], 2 * DESK_Y - p[1], p[2]], axis: ax ? [ax[0], -ax[1], ax[2]] : null, g: DESK_REFL });
+      }
+    });
+    const rmin = Math.min(...drivers.map(p => v3.len(v3.sub(p, lis.c)))) / 1000;
+    const G = [[[0, 0], [0, 0]], [[0, 0], [0, 0]]];
+    for (const P of paths) {
+      const relCam = v3.sub(P.src, lis.c), rel = mtv(lis.M, relCam);
+      const r = v3.len(rel) / 1000, dx = rel[0] / v3.len(rel);
+      const D = P.axis ? directivity(dot(P.axis, unitv(v3.mul(relCam, -1))), f) : 1;
+      const prop = cr(cexp(-2 * Math.PI * f * (r - rmin) / C), P.g * D * rmin / r);
+      G[0][P.s] = ca(G[0][P.s], cm(earResp(dx, f, lis.radius), prop));
+      G[1][P.s] = ca(G[1][P.s], cm(earResp(-dx, f, lis.radius), prop));
+    }
+    return G;
+  }
+  function beta(f) { const out = Math.max(0, Math.log2(150 / f)) + Math.max(0, Math.log2(f / 8000));
+    return 0.005 + (0.5 - 0.005) * (1 - Math.exp(-2 * out)); }
+  function xtc(G, b) {
+    const Gh = [[cc(G[0][0]), cc(G[1][0])], [cc(G[0][1]), cc(G[1][1])]];
+    const M = [[0, 0], [0, 0]].map((row, i) => row.map((_, j) =>
+      ca(ca(cm(G[i][0], Gh[0][j]), cm(G[i][1], Gh[1][j])), i === j ? [b, 0] : [0, 0])));
+    const det = cs(cm(M[0][0], M[1][1]), cm(M[0][1], M[1][0]));
+    const Mi = [[cdiv(M[1][1], det), cdiv(cr(M[0][1], -1), det)], [cdiv(cr(M[1][0], -1), det), cdiv(M[0][0], det)]];
+    return [0, 1].map(i => [0, 1].map(j => ca(cm(Gh[i][0], Mi[0][j]), cm(Gh[i][1], Mi[1][j]))));
+  }
+  function separation(design, truth, drivers, dOpt, tOpt) {
+    return FREQS.map(f => {
+      const Cm = xtc(plant(design, drivers, f, dOpt), beta(f)), G = plant(truth, drivers, f, tOpt);
+      let sum = 0;
+      for (let k = 0; k < 2; k++) {
+        const E = [0, 1].map(e => ca(cm(G[e][0], Cm[0][k]), cm(G[e][1], Cm[1][k])));
+        sum += 20 * Math.log10(cabs(E[k]) / Math.max(cabs(E[1 - k]), 1e-9));
+      }
+      return Math.min(sum / 2, 60);
+    });
+  }
+  const median = a => { const b = [...a].sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+
+  // pan/tilt as geometry.stand_angles: pan > 0 toward camera +X, tilt > 0 up
+  // pan relative to the stand's zero direction (yaw0), wrapped to (-180, 180]
+  const wrap = a => ((a + 180) % 360 + 360) % 360 - 180;
+  function standAngles(s, tgt) {
+    const d = v3.sub(tgt, s.p);
+    return { pan: wrap(Math.atan2(d[0], d[2]) / D2R - (s.yaw0 || 0)), tilt: Math.atan2(-d[1], Math.hypot(d[0], d[2])) / D2R };
+  }
+  function driverPos(s, tgt) { const d = v3.sub(tgt, s.p); return v3.add(s.p, v3.mul(d, DRIVER_OFFSET / v3.len(d))); }
+
+  // ================================================================= state
+  const st = { head: { ...SEAT, z: 760 }, motion: "sway", ears: "seen", aim: "ear", noise: 3,
+               t0: performance.now(), servo: [],
+               nvec: [0, 0, 0], lastNoise: 0,
+               speed: 1, swayT: 0, lag: 80, lead: 100, backlash: 1.5, dropout: 10, panLim: 60, tiltLim: 30,
+               desk: false, cone: true, listeners: "one", editStands: false,
+               hist: [], held: null, vel: null, prevEst: null, dropped: false };
+  const $ = id => document.getElementById(id);
+  function setSeg(group, active) { $(group).querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.id === active))); }
+  function manual() { if (st.motion !== "drag") { st.motion = "drag"; setSeg("motion", "m-drag"); } }
+  $("m-drag").onclick = manual;
+  $("m-sway").onclick = () => { st.motion = "sway"; setSeg("motion", "m-sway"); };
+  for (const [id, key] of [["e-prof", "profile"], ["e-gen", "generic"], ["e-eyes", "eyes"], ["e-seen", "seen"]])
+    $(id).onclick = () => { st.ears = key; setSeg("ears", id); };
+  $("a-ear").onclick = () => { st.aim = "ear"; setSeg("aim", "a-ear"); };
+  $("a-head").onclick = () => { st.aim = "head"; setSeg("aim", "a-head"); };
+  $("yaw").oninput = e => { manual(); st.head.yaw = +e.target.value; };
+  $("pitch").oninput = e => { manual(); st.head.pitch = +e.target.value; };
+  $("height").oninput = e => { manual(); st.head.y = -(+e.target.value); };   // +Y is down
+  $("noise").oninput = e => { st.noise = +e.target.value; $("noise-out").textContent = `${st.noise} mm`; };
+  const slider = (id, key, fmt, after) => { $(id).oninput = e => { st[key] = +e.target.value; $(id + "-out").textContent = fmt(st[key]); after && after(); }; };
+  slider("speed", "speed", v => `${v}×`, () => { st.swayT = st.swayT || 0; });
+  slider("lag", "lag", v => `${v} ms`);
+  slider("lead", "lead", v => `${v} ms`);
+  slider("backlash", "backlash", v => `${v}°`);
+  slider("dropout", "dropout", v => `${v} %`);
+  slider("panlim", "panLim", v => `±${v}°`, () => world.fans && updateFans());
+  slider("tiltlim", "tiltLim", v => `±${v}°`);
+  const toggle = (id, key) => { $(id).onclick = () => { st[key] = !st[key]; $(id).setAttribute("aria-pressed", String(st[key])); }; };
+  toggle("t-desk", "desk");
+  toggle("t-cone", "cone");
+  for (const [id, key] of [["l-one", "one"], ["l-main", "main"], ["l-mid", "midpoint"]])
+    $(id).onclick = () => { st.listeners = key; setSeg("lis", id); };
+
+  // ================================================================= 3D scene
+  const canvas = $("gl");
+  if (!window.THREE) { canvas.outerHTML = '<p class="fallback">The 3D view needs WebGL and could not start. The numbers on the right still update.</p>'; }
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const S = 0.001;                                     // mm -> scene metres
+  const toW = p => new THREE.Vector3(p[0] * S, -p[1] * S, -p[2] * S);   // camera frame -> three (used only with WebGL)
+
+  let renderer, scene, cam3, world = {};
+  function buildScene() {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    scene = new THREE.Scene();
+    cam3 = new THREE.PerspectiveCamera(40, 1, 0.01, 20);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 0.9));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.6); sun.position.set(1, 2, 1); scene.add(sun);
+
+    const M = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7, metalness: 0.05 });
+    world.mat = { ink: M(0x222222), amber: M(0xc26a12), teal: M(0x11807d), good: M(0x2e7d4f), rule: M(0xcccccc), panel: M(0xffffff) };
+
+    // floor grid 100 mm, 400 mm below speaker height
+    world.grid = new THREE.GridHelper(2.0, 20, 0x888888, 0x888888);
+    world.grid.position.set(0, -0.4, -0.6); world.grid.material.transparent = true; world.grid.material.opacity = 0.35;
+    scene.add(world.grid);
+
+    // camera on its monitor
+    const camBody = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.05, 0.05), world.mat.ink);
+    scene.add(camBody);
+    const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.01, 24), world.mat.panel);
+    lens.rotation.x = Math.PI / 2; lens.position.z = -0.03; scene.add(lens);
+    // translucent so speakers in front of the screen stay visible from behind
+    const monitor = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.32, 0.02),
+      new THREE.MeshStandardMaterial({ color: 0xcccccc, transparent: true, opacity: 0.35, depthWrite: false }));
+    world.monitor = monitor;
+    monitor.position.set(0, -0.2, 0.03); scene.add(monitor);
+
+
+    // listener head: sphere + nose, true ears, estimated ears
+    world.head = new THREE.Group(); scene.add(world.head);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(R_TRUE, 32, 24),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, transparent: true, opacity: 0.55 }));
+    world.skull = skull; world.head.add(skull);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.04, 16), world.mat.teal);
+    nose.rotation.x = Math.PI / 2; nose.position.set(0, 0.0107 - 0.035, 0.105);   // head frame z back -> three +z front
+    world.head.add(nose);
+    const eyeG = new THREE.SphereGeometry(0.009, 12, 8);
+    for (const x of [0.0315, -0.0315]) { const e = new THREE.Mesh(eyeG, world.mat.ink); e.position.set(x, 0.0107, 0.082); world.head.add(e); }
+    world.trueEars = ["L", "R"].map(() => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.012, 16, 12), world.mat.teal); scene.add(m); return m; });
+    world.estEars = ["L", "R"].map(() => {
+      const solid = new THREE.Mesh(new THREE.SphereGeometry(0.018, 16, 12), world.mat.good);
+      const ring = new THREE.Mesh(new THREE.SphereGeometry(0.02, 12, 8),
+        new THREE.MeshBasicMaterial({ color: 0x5d6a76, wireframe: true }));
+      scene.add(solid); scene.add(ring); return { solid, ring };
+    });
+    // eye-to-ear offset line for virtual ears
+    world.offsets = [0, 1].map(() => {
+      const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+        new THREE.LineDashedMaterial({ color: 0x8a3f6e, dashSize: 0.008, gapSize: 0.006 }));
+      scene.add(l); return l;
+    });
+    // seat marker on the floor
+    const seat = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.056, 40), new THREE.MeshBasicMaterial({ color: 0x5d6a76, side: THREE.DoubleSide }));
+    seat.rotation.x = -Math.PI / 2; seat.position.set(SEAT.x * S, -0.399, -SEAT.z * S); scene.add(seat);
+
+    // desk surface (shown when the reflection is on)
+    world.desk = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.75),
+      new THREE.MeshBasicMaterial({ color: 0x8a6a4a, transparent: true, opacity: 0.22, side: THREE.DoubleSide }));
+    world.desk.rotation.x = -Math.PI / 2; world.desk.position.set(0, -DESK_Y * S, -0.33); scene.add(world.desk);
+    // subwoofer (5.1 / 7.1): fixed box on the floor, time-aligned with the stands
+    world.sub = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), world.mat.ink);
+    world.sub.userData.stand = "sub";
+    world.sub.position.copy(toW(SUB.p)); world.sub.position.y = -0.4 + 0.15; scene.add(world.sub);
+    buildRig();
+    // second listener
+    world.guest = new THREE.Group(); scene.add(world.guest);
+    world.guestSkull = new THREE.Mesh(new THREE.SphereGeometry(R_GENERIC, 28, 20),
+      new THREE.MeshStandardMaterial({ color: 0x8a3f6e, roughness: 0.8, transparent: true, opacity: 0.45 }));
+    world.guest.add(world.guestSkull);
+    const gnose = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.036, 14), world.mat.ink);
+    gnose.rotation.x = Math.PI / 2; gnose.position.set(0, -0.025, 0.1); world.guest.add(gnose);
+    world.guestEars = [0, 1].map(() => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.01, 12, 8), world.mat.ink); scene.add(m); return m; });
+    world.mid = [0, 1].map(() => { const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.016), world.mat.amber); scene.add(m); return m; });
+    applyTheme();
+  }
+
+  // everything that depends on the stand layout lives in one group, rebuilt on change
+  function buildRig() {
+    if (world.rig) { scene.remove(world.rig); world.rig.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+    world.rig = new THREE.Group(); scene.add(world.rig);
+    const R = world.rig;
+    world.stands = SPK.map((s, i) => {
+      const g = new THREE.Group(); g.position.copy(toW(s.p)); R.add(g);
+      g.userData.stand = i;
+      const poleLen = Math.max((400 - s.p[1]) / 1000 - 0.02, 0.05);       // down to the floor
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, poleLen, 12), world.mat.ink);
+      pole.position.y = -0.02 - poleLen / 2; g.add(pole);
+      const panG = new THREE.Group(); g.add(panG);
+      const tiltG = new THREE.Group(); panG.add(tiltG);
+      const cab = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.16, 0.12), world.mat.amber);
+      tiltG.add(cab);
+      const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.006, 24), world.mat.panel);
+      cone.rotation.x = Math.PI / 2; cone.position.set(0, 0.03, -0.062); tiltG.add(cone);
+      cab.userData.stand = i;
+      return { g, panG, tiltG, cab };
+    });
+    // speaker beams along the stand's actual (slewed) axis:
+    // hard line = on a seen ear, faint line = still slewing, dotted = aimed at a virtual ear
+    world.aims = SPK.map(() => {
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.0032, 0.0032, 1, 10),
+        new THREE.MeshBasicMaterial({ color: 0xc26a12, transparent: true, opacity: 1 }));
+      const pts = new THREE.BufferGeometry();
+      pts.setAttribute("position", new THREE.BufferAttribute(new Float32Array(200 * 3), 3));
+      const dots = new THREE.Points(pts, new THREE.PointsMaterial({ color: 0xc26a12, size: 5, sizeAttenuation: false }));
+      R.add(beam); R.add(dots); return { beam, dots };
+    });
+    // directivity cones (unit height, scaled per frame)
+    world.cones = SPK.map(() => {
+      const c = new THREE.Mesh(new THREE.ConeGeometry(Math.tan(CONE_DEG * D2R), 1, 32, 1, true),
+        new THREE.MeshBasicMaterial({ color: 0xc26a12, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false }));
+      R.add(c); return c;
+    });
+    // pan travel fans at each stand, centred on its zero direction
+    world.fans = SPK.map(s => {
+      const m = new THREE.Mesh(new THREE.CircleGeometry(0.22, 40, 0, 1),
+        new THREE.MeshBasicMaterial({ color: 0x5d6a76, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false }));
+      m.rotation.x = -Math.PI / 2; m.position.copy(toW(s.p)); m.position.y -= 0.09; R.add(m); return m;
+    });
+    updateFans();
+    applyTheme();
+  }
+
+  function setLayout(name) {
+    LAYOUT = name; SPK = cloneLayout(name);
+    SUB.p = [...SUB_HOME];
+    st.servo = SPK.map(() => ({ pan: 0, tilt: 0, outPan: 0, outTilt: 0, clamped: false }));
+    if (renderer) {
+      buildRig();
+      world.sub.visible = name !== "stereo";
+      orbit.target.z = name === "stereo" ? -0.45 : -0.7;
+      orbit.dist = name === "stereo" ? 2.1 : 2.8;
+    }
+    const multi = name !== "stereo";
+    $("kpi-title").textContent = multi ? "Time alignment, every speaker at its ear" : "Crosstalk cancellation, 200 Hz – 6 kHz";
+    $("k-track-l").textContent = multi ? "arrival spread, delays follow you" : "filters follow you";
+    $("k-fixed-l").textContent = multi ? "arrival spread, delays fixed at seat" : "filters fixed at seat";
+    $("k-ceil-l").textContent = multi ? "level spread, following you" : "perfect knowledge";
+    $("plot-title").textContent = multi ? "Arrival time at each speaker's ear" : "Channel separation at the ears";
+    $("legend").hidden = multi;
+    fillEditor();
+  }
+
+  // ---- speaker placement editor
+  const editable = () => LAYOUT === "stereo" ? SPK : [...SPK, SUB];
+  let edIdx = 0;
+  function fillEditor() {
+    const list = editable();
+    edIdx = Math.min(edIdx, list.length - 1);
+    $("ed-which").innerHTML = list.map((s, i) => `<option value="${i}"${i === edIdx ? " selected" : ""}>${s.sub ? "LFE (sub)" : s.name}</option>`).join("");
+    syncEditor();
+  }
+  function syncEditor() {
+    const s = editable()[edIdx];
+    if (!s) return;
+    const set = (id, v) => { if (document.activeElement !== $(id)) $(id).value = Math.round(v); };
+    set("ed-x", s.p[0]); set("ed-z", s.p[2]); set("ed-h", -s.p[1]);
+    set("ed-yaw", s.sub ? 0 : s.yaw0);
+    $("ed-yaw").disabled = !!s.sub || !!s.face;
+    $("ed-face").checked = !!s.face; $("ed-face").disabled = !!s.sub;
+  }
+  function placed(rebuild) {          // a stand moved: refresh visuals (positions, fans, poles)
+    if (!renderer) return;
+    if (rebuild) { buildRig(); return; }
+    SPK.forEach((s, i) => { world.stands[i].g.position.copy(toW(s.p)); const f = world.fans[i]; f.position.copy(toW(s.p)); f.position.y -= 0.09; });
+    updateFans();
+    world.sub.position.copy(toW(SUB.p)); world.sub.position.y = -0.4 + 0.15;
+  }
+  function editValue() {
+    const s = editable()[edIdx];
+    const num = id => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : null; };
+    const x = num("ed-x"), z = num("ed-z"), h = num("ed-h"), yaw = num("ed-yaw");
+    const hChanged = h !== null && Math.round(-s.p[1]) !== Math.round(h);
+    if (x !== null) s.p[0] = Math.max(-1500, Math.min(1500, x));
+    if (z !== null) s.p[2] = Math.max(-200, Math.min(2500, z));
+    if (h !== null) s.p[1] = -Math.max(-390, Math.min(600, h));
+    if (!s.sub) { if (s.face) faceSeat(s); else if (yaw !== null) s.yaw0 = wrap(yaw); }
+    placed(hChanged);
+    syncEditor();
+  }
+  $("ed-which").onchange = e => { edIdx = +e.target.value; syncEditor(); };
+  for (const id of ["ed-x", "ed-z", "ed-h", "ed-yaw"]) $(id).oninput = editValue;
+  $("ed-face").onchange = e => { const s = editable()[edIdx]; s.face = e.target.checked; if (s.face) faceSeat(s); placed(false); syncEditor(); };
+  // snap to grid: drags land on multiples of the step; the number boxes step by it too
+  st.snap = 50;
+  const snap = v => st.snap > 0 ? Math.round(v / st.snap) * st.snap : v;
+  const setSteps = () => { for (const id of ["ed-x", "ed-z", "ed-h"]) $(id).step = st.snap || 1; };
+  setSteps();
+  $("ed-snap").onchange = e => { st.snap = +e.target.value; setSteps(); };
+  $("ed-move").onclick = () => { st.editStands = !st.editStands; $("ed-move").setAttribute("aria-pressed", String(st.editStands)); };
+  $("ed-reset").onclick = () => setLayout(LAYOUT);
+  const PINS = [[6, 7], [8, 9], [10, 11], [12, 13], [22, 23], [24, 25], [26, 27], [28, 29]];
+  const WAV = { stereo: ["FL", "FR"], "5.1": ["FL", "FR", "FC", "LFE", "SL", "SR"], "7.1": ["FL", "FR", "FC", "LFE", "BL", "BR", "SL", "SR"] };
+  function configJSON() {
+    const r1 = v => Math.round(v * 10) / 10;
+    const stands = SPK.map((s, i) => ({
+      name: s.name, position_mm: s.p.map(r1), yaw_offset_deg: r1(s.yaw0),
+      pan: { pin: PINS[i][0] }, tilt: { pin: PINS[i][1] }, aim: "near_ear",
+      ear: s.ear === "L" ? "left" : s.ear === "R" ? "right" : "center",
+      ...(LAYOUT === "stereo" ? {} : { channel: s.name, output_channel: WAV[LAYOUT].indexOf(s.name) }) }));
+    const out = { stands };
+    if (LAYOUT !== "stereo") out.audio = { layout: LAYOUT, mode: "align", lfe_mode: "sub", sub_output: WAV[LAYOUT].indexOf("LFE"), sub_position_mm: SUB.p.map(r1) };
+    return JSON.stringify(out, null, 2);
+  }
+  $("ed-copy").onclick = () => {
+    const ta = $("ed-json"); ta.value = configJSON(); ta.hidden = false;
+    const done = ok => { $("ed-msg").textContent = ok ? "Copied. Paste the stands (and audio) blocks into your stands.json." : "Select the text below and copy it into your stands.json."; };
+    try {
+      navigator.clipboard.writeText(ta.value).then(() => done(true), () => { ta.focus(); ta.select(); done(false); });
+    } catch (err) { ta.focus(); ta.select(); done(false); }
+  };
+
+  function updateFans() {
+    const L = st.panLim * D2R;
+    world.fans.forEach((f, i) => {
+      f.geometry.dispose();
+      f.geometry = new THREE.CircleGeometry(0.22, 40, Math.PI / 2 - (SPK[i].yaw0 || 0) * D2R - L, 2 * L);
+    });
+  }
+
+  function applyTheme() {
+    const col = n => new THREE.Color(css(n) || "#888");
+    world.mat.ink.color = col("--ink"); world.mat.amber.color = col("--amber"); world.mat.teal.color = col("--teal");
+    world.mat.good.color = col("--good"); world.mat.rule.color = col("--rule"); world.mat.panel.color = col("--panel");
+    world.skull.material.color = col("--panel");
+    for (const e of world.estEars) e.ring.material.color = col("--muted");
+    for (const o of world.offsets) o.material.color = col("--plum");
+    world.grid.material.color = col("--muted");
+    if (world.monitor) world.monitor.material.color = col("--rule");
+    if (world.aims) for (const a of world.aims) { a.beam.material.color = col("--amber"); a.dots.material.color = col("--amber"); }
+    if (world.cones) for (const c of world.cones) c.material.color = col("--amber");
+    if (world.fans) for (const f of world.fans) f.material.color = col("--muted");
+    if (world.guestSkull) world.guestSkull.material.color = col("--plum");
+  }
+
+  // ---- orbit camera (spherical around the listening area)
+  const orbit = { az: 0.75, el: 0.42, dist: 2.1, target: { x: 0, y: -0.05, z: -0.45 } };
+  function placeCamera() {
+    const { az, el, dist, target } = orbit;
+    cam3.position.set(target.x + dist * Math.cos(el) * Math.sin(az), target.y + dist * Math.sin(el), target.z + dist * Math.cos(el) * Math.cos(az));
+    cam3.up.set(0, 1, 0);
+    if (el > 1.5) cam3.up.set(0, 0, -1);
+    cam3.lookAt(target.x, target.y, target.z);
+  }
+  const VIEWS = { "v-orbit": { az: 0.75, el: 0.42, dist: 2.1 }, "v-top": { az: 0, el: 1.56, dist: 2.2 }, "v-side": { az: Math.PI / 2, el: 0.02, dist: 2.0 } };
+  for (const id of Object.keys(VIEWS)) $(id).onclick = () => { Object.assign(orbit, VIEWS[id]); setSeg("views", id); };
+
+  function resize() {
+    const r = canvas.getBoundingClientRect();
+    renderer.setSize(r.width, r.height, false);
+    cam3.aspect = r.width / Math.max(r.height, 1); cam3.updateProjectionMatrix();
+  }
+
+  // ---- pointer: orbit, or drag the head in its horizontal plane (Manual)
+  let drag = null;
+  let ray, ndc;                                        // created once THREE is known to exist
+  function pick(e) {
+    const r = canvas.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, cam3);
+  }
+  function setupInput() {
+    ray = new THREE.Raycaster(); ndc = new THREE.Vector2();
+    canvas.addEventListener("pointerdown", e => {
+      pick(e);
+      let stand = null;
+      if (st.editStands) {
+        const hits = ray.intersectObjects([...world.stands.map(w => w.cab), ...(world.sub.visible ? [world.sub] : [])], false);
+        if (hits.length) stand = hits[0].object.userData.stand;
+      }
+      const hit = stand === null && ray.intersectObject(world.skull, false).length > 0;
+      drag = { x: e.clientX, y: e.clientY, head: hit, stand };
+      if (hit) manual();
+      if (stand !== null) {
+        const list = editable();
+        edIdx = stand === "sub" ? list.length - 1 : stand;
+        fillEditor();
+      }
+      canvas.setPointerCapture(e.pointerId); canvas.style.cursor = "grabbing";
+    });
+    canvas.addEventListener("pointermove", e => {
+      if (!drag) return;
+      if (drag.stand !== null && drag.stand !== undefined) {
+        pick(e);
+        const s = drag.stand === "sub" ? SUB : SPK[drag.stand];
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), s.p[1] * S);
+        const p = new THREE.Vector3();
+        if (ray.ray.intersectPlane(plane, p)) {
+          const free = e.altKey;
+          s.p[0] = Math.max(-1500, Math.min(1500, free ? p.x / S : snap(p.x / S)));
+          s.p[2] = Math.max(-200, Math.min(2500, free ? -p.z / S : snap(-p.z / S)));
+          if (!s.sub && s.face) faceSeat(s);
+          placed(false); syncEditor();
+        }
+      } else if (drag.head) {
+        pick(e);
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), st.head.y * S);   // y_three = -Y
+        const p = new THREE.Vector3();
+        if (ray.ray.intersectPlane(plane, p)) {
+          st.head.x = Math.max(-650, Math.min(650, p.x / S));
+          st.head.z = Math.max(350, Math.min(1400, -p.z / S));
+        }
+      } else {
+        orbit.az -= (e.clientX - drag.x) * 0.008;
+        orbit.el = Math.max(-0.2, Math.min(1.56, orbit.el + (e.clientY - drag.y) * 0.006));
+        drag.x = e.clientX; drag.y = e.clientY;
+        setSeg("views", "");
+      }
+    });
+    const end = () => { drag = null; canvas.style.cursor = "grab"; };
+    canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
+    canvas.addEventListener("wheel", e => { e.preventDefault(); orbit.dist = Math.max(0.8, Math.min(4, orbit.dist * Math.exp(e.deltaY * 0.001))); }, { passive: false });
+    canvas.addEventListener("keydown", e => {
+      const k = { ArrowLeft: [20, 0], ArrowRight: [-20, 0], ArrowUp: [0, 20], ArrowDown: [0, -20] }[e.key];
+      if (!k) return; e.preventDefault(); manual();
+      st.head.x = Math.max(-650, Math.min(650, st.head.x + k[0])); st.head.z = Math.max(350, Math.min(1400, st.head.z + k[1]));
+    });
+    window.addEventListener("resize", resize);
+    if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);
+    new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  }
+
+  function setLine(line, a, b) {
+    const pos = line.geometry.attributes.position;
+    pos.setXYZ(0, a.x, a.y, a.z); pos.setXYZ(1, b.x, b.y, b.z); pos.needsUpdate = true;
+    line.geometry.computeBoundingSphere();
+    if (line.computeLineDistances) line.computeLineDistances();
+  }
+
+  // ================================================================= plot
+  const pv = $("plot"), pg = pv.getContext("2d");
+  function drawPlot(series) {
+    const Wp = pv.width, Hp = pv.height, m = { l: 62, r: 16, t: 14, b: 44 };
+    pg.clearRect(0, 0, Wp, Hp);
+    const X = f => m.l + Math.log(f / 200) / Math.log(30) * (Wp - m.l - m.r);
+    const Y = d => m.t + (1 - Math.max(0, Math.min(60, d)) / 60) * (Hp - m.t - m.b);
+    pg.strokeStyle = css("--rule"); pg.lineWidth = 1; pg.fillStyle = css("--muted"); pg.font = `20px ${css("--f-mono")}`;
+    for (const d of [0, 10, 20, 30, 40, 50, 60]) { pg.beginPath(); pg.moveTo(m.l, Y(d)); pg.lineTo(Wp - m.r, Y(d)); pg.stroke(); pg.fillText(`${d}`, m.l - 34, Y(d) + 7); }
+    for (const [f, lab] of [[200, "200"], [500, "500"], [1000, "1k"], [2000, "2k"], [6000, "6k"]]) {
+      pg.beginPath(); pg.moveTo(X(f), m.t); pg.lineTo(X(f), Hp - m.b); pg.stroke(); pg.fillText(lab, X(f) - 14, Hp - m.b + 28); }
+    pg.save(); pg.translate(18, Hp / 2 + 14); pg.rotate(-Math.PI / 2); pg.fillText("dB", 0, 0); pg.restore();
+    pg.fillText("Hz", Wp - m.r - 28, Hp - 4);
+    for (const s of series) {
+      pg.strokeStyle = s.color; pg.lineWidth = s.width; pg.setLineDash(s.dash || []); pg.beginPath();
+      s.data.forEach((d, i) => { const x = X(FREQS[i]), y = Y(d); i ? pg.lineTo(x, y) : pg.moveTo(x, y); }); pg.stroke();
+    }
+    pg.setLineDash([]);
+  }
+  function drawBars(names, tracked, fixed) {
+    const Wp = pv.width, Hp = pv.height, m = { l: 62, r: 16, t: 18, b: 44 };
+    pg.clearRect(0, 0, Wp, Hp);
+    const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+    const mT = mean(tracked), mF = mean(fixed);
+    const lim = Math.max(1, ...fixed.map(v => Math.abs(v - mF)), ...tracked.map(v => Math.abs(v - mT)));
+    const span = Math.ceil(lim);
+    const Y = v => m.t + (Hp - m.t - m.b) * (0.5 - v / (2 * span));
+    pg.strokeStyle = css("--rule"); pg.fillStyle = css("--muted"); pg.font = `20px ${css("--f-mono")}`; pg.lineWidth = 1;
+    for (let v = -span; v <= span; v += span / 2) { pg.beginPath(); pg.moveTo(m.l, Y(v)); pg.lineTo(Wp - m.r, Y(v)); pg.stroke();
+      pg.fillText(`${v > 0 ? "+" : ""}${v.toFixed(1)}`, 4, Y(v) + 7); }
+    pg.fillText("ms", 4, m.t - 2);
+    const n = names.length, slot = (Wp - m.l - m.r) / n, bw = Math.min(26, slot / 3);
+    names.forEach((nm, i) => {
+      const x = m.l + slot * (i + 0.5);
+      pg.fillStyle = css("--plum"); const yf = Y(fixed[i] - mF); pg.fillRect(x - bw - 2, Math.min(yf, Y(0)), bw, Math.abs(yf - Y(0)) || 2);
+      pg.fillStyle = css("--teal"); const yt = Y(tracked[i] - mT); pg.fillRect(x + 2, Math.min(yt, Y(0)), bw, Math.abs(yt - Y(0)) || 2);
+      pg.fillStyle = css("--ink"); pg.fillText(nm, x - pg.measureText(nm).width / 2, Hp - 12);
+    });
+  }
+  const rating = db => db >= 15 ? "ok" : db >= 8 ? "mid" : "low";
+  function kpi(id, db) { const el = $(id); el.textContent = `${db.toFixed(1)} dB`; el.className = `mono ${rating(db)}`; }
+  const sign = v => (v >= 0 ? "+" : "") + v;
+
+  // ================================================================= estimate
+  function estimate(h) {
+    const nh = { ...h, x: h.x + st.nvec[0], y: h.y + st.nvec[1], z: h.z + st.nvec[2] };
+    const visible = Math.abs(h.yaw) >= 20 ? (h.yaw > 0 ? "R" : "L") : null;
+    if (st.ears === "profile") return { ...listener(nh, TRUE_EARS, R_TRUE), seen: null };
+    if (st.ears === "generic") return { ...listener(nh, GENERIC_EARS, R_GENERIC), seen: null };
+    if (st.ears === "seen" && visible) return { ...listener(nh, TRUE_EARS, R_TRUE), seen: visible };
+    // eyes only: depth from the stored eye spacing, which shrinks by cos(yaw); turn and
+    // nod are unseen (taken as 0); ears = eye midpoint + stored offset
+    const eyeMid = v3.add(mv(rot(nh.yaw, nh.pitch), EYE_MID), [nh.x, nh.y, nh.z]);
+    const k = 1 / Math.max(Math.cos(h.yaw * D2R), 0.2);
+    const em = v3.mul(eyeMid, k);
+    const h0 = { x: em[0] - EYE_MID[0], y: em[1] - EYE_MID[1], z: em[2] - EYE_MID[2], yaw: 0, pitch: 0 };
+    return { ...listener(h0, TRUE_EARS, R_TRUE), seen: null, eyes: em };
+  }
+  // what the tracker saw `lag` ms ago
+  function delayed(now, key) {
+    const want = now - st.lag;
+    let best = null;
+    for (const e of st.hist) { if (e.t <= want) best = e; else break; }
+    return (best || st.hist[0])[key];
+  }
+  function lead(est, now) {
+    const pts = [est.L, est.R, est.c];
+    if (st.prevEst && now > st.prevEst.t) {
+      const dt = (now - st.prevEst.t) / 1000, a = dt / (0.08 + dt);
+      const raw = pts.map((p, i) => v3.mul(v3.sub(p, st.prevEst.pts[i]), 1 / dt));
+      st.vel = st.vel ? st.vel.map((v, i) => v3.add(v3.mul(raw[i], a), v3.mul(v, 1 - a))) : raw;
+    }
+    st.prevEst = { t: now, pts };
+    if (!st.lead || !st.vel) return est;
+    const shift = st.vel.map(v => { const d = v3.mul(v, st.lead / 1000), n = v3.len(d); return n > 120 ? v3.mul(d, 120 / n) : d; });
+    const out = { ...est, L: v3.add(est.L, shift[0]), R: v3.add(est.R, shift[1]), c: v3.add(est.c, shift[2]) };
+    return out;
+  }
+  const mergeEars = (a, b) => ({ ...a, L: v3.mid(a.L, b.L), R: v3.mid(a.R, b.R), c: v3.mid(a.c, b.c), seen: null });
+
+  // ================================================================= loop
+  let frame = 0, last = performance.now();
+  function tick(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now; frame++;
+    const h = st.head;
+    st.swayT += dt * st.speed;                         // sway clock runs at the chosen speed
+    const t = st.swayT;
+    if (st.motion === "sway") {
+      h.x = 180 * Math.sin(2 * Math.PI * 0.08 * t);
+      h.z = 760 + 120 * Math.sin(2 * Math.PI * 0.05 * t);
+      h.y = -60 * Math.sin(2 * Math.PI * 0.06 * t + 1);
+      h.yaw = Math.round(40 * Math.sin(2 * Math.PI * 0.12 * t));
+      h.pitch = Math.round(12 * Math.sin(2 * Math.PI * 0.09 * t + 0.5));
+      $("yaw").value = h.yaw; $("pitch").value = h.pitch; $("height").value = Math.round(-h.y);
+    }
+    $("yaw-out").textContent = `${sign(h.yaw)}°`; $("pitch-out").textContent = `${sign(h.pitch)}°`;
+    $("height-out").textContent = `${sign(Math.round(-h.y))} mm`;
+    if (now - st.lastNoise > 120) { st.lastNoise = now; st.nvec = [0, 1, 2].map(() => (Math.random() * 2 - 1) * st.noise); }
+
+    const two = st.listeners !== "one";
+    const gh = { x: 380 + 50 * Math.sin(2 * Math.PI * 0.07 * t + 2), y: -30, z: 930 + 40 * Math.sin(2 * Math.PI * 0.05 * t),
+                 yaw: Math.round(-25 + 10 * Math.sin(2 * Math.PI * 0.1 * t)), pitch: 0 };
+    st.hist.push({ t: now, h: { ...h }, g: { ...gh } });
+    while (st.hist.length > 2 && st.hist[1].t < now - 400) st.hist.shift();
+
+    const truth = listener(h, TRUE_EARS, R_TRUE);
+    const guestTruth = listener(gh, GENERIC_EARS, R_GENERIC);
+    // detection: late by `lag`, and missing on dropout frames (tracker holds the last estimate)
+    st.dropped = Math.random() * 100 < st.dropout;
+    let est;
+    if (st.dropped && st.held) est = st.held;
+    else { est = estimate(delayed(now, "h")); st.held = est; }
+    const gd = delayed(now, "g");
+    const guestEst = listener({ ...gd, x: gd.x + st.nvec[1], z: gd.z + st.nvec[2] }, GENERIC_EARS, R_GENERIC);
+    const seat = listener(SEAT, TRUE_EARS, R_TRUE);
+
+    const ahead = st.dropped ? (st.heldAim || est) : lead(est, now);
+    st.heldAim = ahead;
+    let aimL = ahead;
+    if (st.listeners === "midpoint") aimL = mergeEars(ahead, guestEst);
+    const earOf = (L, e) => (e === "L" ? L.L : e === "R" ? L.R : L.c);
+    const targets = SPK.map(s => st.aim === "head" ? aimL.c : earOf(aimL, s.ear));
+
+    // servos: clamp to travel, slew at 120 deg/s, then gear backlash between motor and speaker
+    SPK.forEach((s, i) => {
+      const cmd = standAngles(s, targets[i]), sv = st.servo[i], step = 120 * dt;
+      const cp = Math.max(-st.panLim, Math.min(st.panLim, cmd.pan));
+      const ct = Math.max(-st.tiltLim, Math.min(st.tiltLim, cmd.tilt));
+      sv.clamped = cp !== cmd.pan || ct !== cmd.tilt;
+      sv.pan += Math.max(-step, Math.min(step, cp - sv.pan));
+      sv.tilt += Math.max(-step, Math.min(step, ct - sv.tilt));
+      const b = st.backlash / 2;
+      if (sv.pan - sv.outPan > b) sv.outPan = sv.pan - b; else if (sv.outPan - sv.pan > b) sv.outPan = sv.pan + b;
+      if (sv.tilt - sv.outTilt > b) sv.outTilt = sv.tilt - b; else if (sv.outTilt - sv.tilt > b) sv.outTilt = sv.tilt + b;
+    });
+
+    // actual beams from the speaker's real (lagging, backlashed, clamped) axis
+    const realEar = s => (st.aim === "head" ? truth.c : earOf(truth, s.ear));
+    const beams = SPK.map((s, i) => {
+      const sv = st.servo[i], p = ((s.yaw0 || 0) + sv.outPan) * D2R, tl = sv.outTilt * D2R;
+      const d = [Math.sin(p) * Math.cos(tl), -Math.sin(tl), Math.cos(p) * Math.cos(tl)];
+      const origin = v3.add(s.p, v3.mul(d, DRIVER_OFFSET));
+      const goal = two && st.listeners === "midpoint" ? targets[i] : realEar(s);
+      const len = v3.len(v3.sub(goal, origin)), end = v3.add(origin, v3.mul(d, len));
+      const miss = v3.len(v3.sub(end, goal));
+      const offAxis = Math.acos(Math.max(-1, Math.min(1, dot(d, unitv(v3.sub(goal, origin)))))) / D2R;
+      const virtual = st.aim === "ear" && (s.ear === "C" ? !est.seen : est.seen !== s.ear);
+      return { origin, end, len, axis: d, miss, offAxis, hit: miss < 15, virtual, clamped: sv.clamped };
+    });
+    const drivers = beams.map(b => b.origin);
+
+    if (renderer) {
+      world.head.position.copy(toW(truth.origin));
+      world.head.rotation.order = "YXZ";
+      world.head.rotation.set(-h.pitch * D2R, h.yaw * D2R, 0);   // camera-frame R mapped to three axes
+      ["L", "R"].forEach((k, i) => {
+        world.trueEars[i].position.copy(toW(truth[k]));
+        const pE = toW(est[k]), seen = est.seen === k;
+        world.estEars[i].solid.visible = seen; world.estEars[i].ring.visible = !seen;
+        world.estEars[i].solid.position.copy(pE); world.estEars[i].ring.position.copy(pE);
+        const off = world.offsets[i];
+        off.visible = !seen && st.ears !== "profile" && st.ears !== "generic";
+        if (off.visible) setLine(off, toW(est.eyes || v3.add(mv(est.M, EYE_MID), est.origin)), pE);
+      });
+      world.guest.visible = two;
+      world.guest.position.copy(toW(guestTruth.origin));
+      world.guest.rotation.order = "YXZ"; world.guest.rotation.set(0, gh.yaw * D2R, 0);
+      world.guestEars.forEach((m, i) => { m.visible = two; m.position.copy(toW(i ? guestTruth.R : guestTruth.L)); });
+      world.mid.forEach((m, i) => { m.visible = st.listeners === "midpoint" && st.aim === "ear"; m.position.copy(toW(i ? aimL.R : aimL.L)); });
+      world.desk.visible = st.desk;
+      SPK.forEach((s, i) => {
+        const sv = st.servo[i], w = world.stands[i];
+        w.panG.rotation.y = -((s.yaw0 || 0) + sv.outPan) * D2R; w.tiltG.rotation.x = sv.outTilt * D2R;
+        const bm = beams[i], A = world.aims[i];
+        const a = toW(bm.origin), b = toW(bm.end);
+        A.beam.visible = !bm.virtual; A.dots.visible = bm.virtual;
+        if (!bm.virtual) {
+          const dir = new THREE.Vector3().subVectors(b, a), len = dir.length();
+          A.beam.position.copy(a).addScaledVector(dir, 0.5);
+          A.beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+          A.beam.scale.set(bm.hit ? 1 : 0.6, len, bm.hit ? 1 : 0.6);
+          A.beam.material.opacity = bm.hit ? 1 : 0.35;
+        } else {
+          const pos = A.dots.geometry.attributes.position, n = Math.min(200, Math.max(2, Math.round(bm.len / 18)));
+          for (let k = 0; k < n; k++) { const q = a.clone().lerp(b, k / (n - 1)); pos.setXYZ(k, q.x, q.y, q.z); }
+          A.dots.geometry.setDrawRange(0, n); pos.needsUpdate = true; A.dots.geometry.computeBoundingSphere();
+        }
+        const cone = world.cones[i];
+        cone.visible = st.cone;
+        if (st.cone) {
+          const dir = new THREE.Vector3().subVectors(b, a), len = Math.max(dir.length(), 0.05);
+          dir.normalize();
+          cone.scale.set(len, len, len);
+          cone.position.copy(a).addScaledVector(dir, len / 2);
+          cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().negate());
+        }
+      });
+      placeCamera();
+      renderer.render(scene, cam3);
+    }
+
+    const status = $("status");
+    const lim = beams.some(b => b.clamped);
+    if (st.dropped) { status.textContent = "Detection dropped · holding last estimate"; status.className = "status mid"; }
+    else if (lim) { status.textContent = "Stand at its travel limit"; status.className = "status low"; }
+    else if (two) { status.textContent = st.listeners === "midpoint" ? "Two listeners · aiming between their ears" : "Two listeners · aiming at the main one"; status.className = "status"; }
+    else if (st.aim === "head") { status.textContent = "Both stands on the head centre"; status.className = "status"; }
+    else if (est.seen) { status.textContent = `${est.seen} ear seen · ${est.seen === "L" ? "R" : "L"} ear virtual`; status.className = "status ok"; }
+    else { status.textContent = st.ears === "eyes" || st.ears === "seen" ? "Both ears virtual (eyes + offset)" : "Both ears from the head pose"; status.className = "status"; }
+
+    if (frame % 4 === 0) {
+      const axes = beams.map(b => b.axis);
+      const designAxes = SPK.map((s, i) => unitv(v3.sub(targets[i], drivers[i])));   // filters assume the aim landed
+      const tOpt = { axes, desk: st.desk };
+      if (LAYOUT !== "stereo") {
+        // every stand (+ sub) delayed and level-matched so all arrive together at their aim
+        // point; designed from the estimate (or the seat), evaluated at the true ears
+        const spk = [...SPK, SUB], pos = [...drivers, SUB.p];
+        const ref = st.listeners === "midpoint" ? aimL : est;
+        const plan = L => { const r = spk.map((s, i) => v3.len(v3.sub(pos[i], earOf(L, s.ear)))), m = Math.max(...r);
+                            return { d: r.map(x => (m - x) / C), g: r.map(x => x / m) }; };
+        const arrive = P => spk.map((s, i) => P.d[i] + v3.len(v3.sub(pos[i], earOf(truth, s.ear))) / C);   // ms (mm / 343)
+        const level = P => spk.map((s, i) => 20 * Math.log10(P.g[i] / v3.len(v3.sub(pos[i], earOf(truth, s.ear)))));
+        const aT = arrive(plan(ref)), aF = arrive(plan(seat)), lv = level(plan(ref));
+        const spread = a => Math.max(...a) - Math.min(...a);
+        const msK = (id, v) => { const el = $(id); el.textContent = `${v.toFixed(2)} ms`; el.className = `mono ${v < 0.1 ? "ok" : v < 0.5 ? "mid" : "low"}`; };
+        msK("k-track", spread(aT)); msK("k-fixed", spread(aF));
+        const lsp = spread(lv); $("k-ceil").textContent = `${lsp.toFixed(1)} dB`; $("k-ceil").className = `mono ${lsp < 1 ? "ok" : lsp < 3 ? "mid" : "low"}`;
+        drawBars(spk.map(s => s.name), aT, aF);
+        $("plot-note").textContent = "Each speaker's sound should reach its ear at the same moment. Plum: delays set once for the seat. Teal: delays follow you." +
+          (two ? " Two listeners: aligned to " + (st.listeners === "midpoint" ? "the midpoint between them." : "the main listener.") : "");
+      } else if (two) {
+        for (const id of ["k-track", "k-fixed", "k-ceil"]) { $(id).textContent = "off"; $(id).className = "mono"; }
+        drawPlot([]);
+        $("plot-note").textContent = "Crosstalk cancellation is off with two listeners: it is built for one pair of ears. " +
+          (st.listeners === "midpoint" ? "The speakers time-align to the midpoint between them." : "The speakers time-align to the main listener.");
+      } else {
+        const sT = separation(est, truth, drivers, { axes: designAxes }, tOpt);
+        const sF = separation(seat, truth, drivers, { axes: designAxes }, tOpt);
+        const sI = separation(truth, truth, drivers, { axes }, tOpt);
+        kpi("k-track", median(sT)); kpi("k-fixed", median(sF)); kpi("k-ceil", median(sI));
+        drawPlot([{ data: sI, color: css("--muted"), width: 2, dash: [8, 6] },
+                  { data: sF, color: css("--plum"), width: 3 }, { data: sT, color: css("--teal"), width: 4 }]);
+        $("plot-note").textContent = st.desk ? "The desk reflection reaches the ears by a second path the filters do not know about." : "";
+      }
+      const ref = two && st.listeners === "midpoint" ? aimL : est;
+      const own = SPK.map((s, i) => v3.len(v3.sub(drivers[i], earOf(ref, s.ear))));
+      const rMax = Math.max(...own);
+      $("stands").innerHTML = SPK.map((s, i) => {
+        const dL = v3.len(v3.sub(drivers[i], truth.L)), dR = v3.len(v3.sub(drivers[i], truth.R));
+        const tag = st.aim === "head" || s.ear === "C" ? "head" : est.seen === s.ear ? "seen" : "virtual";
+        const bm = beams[i];
+        const beam = bm.clamped ? "at limit" : `${bm.virtual ? "dotted · " : ""}${bm.hit ? "on ear" : "off"} ${bm.miss.toFixed(0)} mm`;
+        const cls = bm.clamped ? "low" : bm.hit && !bm.virtual ? "ok" : "";
+        return `<tr><td>${s.name}</td><td>${s.ear === "C" ? "centre" : s.ear} <span class="${tag === "seen" ? "ok" : ""}">${tag}</span></td>
+          <td class="${cls}">${beam}</td>
+          <td>${st.servo[i].outPan.toFixed(1)}°</td><td>${st.servo[i].outTilt.toFixed(1)}°</td>
+          <td>${bm.offAxis.toFixed(1)}°</td>
+          <td>${dL.toFixed(0)} mm</td><td>${dR.toFixed(0)} mm</td>
+          <td>${((rMax - own[i]) / 1000 / C * 1000).toFixed(3)} ms</td><td>${(20 * Math.log10(own[i] / rMax)).toFixed(1)} dB</td></tr>`;
+      }).join("");
+    }
+    requestAnimationFrame(tick);
+  }
+
+  for (const [id, name] of [["y-st", "stereo"], ["y-51", "5.1"], ["y-71", "7.1"]])
+    $(id).onclick = () => { setLayout(name); setSeg("layout", id); };
+  setLayout("stereo");
+  if (window.THREE) {
+    try { buildScene(); setupInput(); resize(); setLayout(LAYOUT); } catch (err) {
+      renderer = null;
+      canvas.outerHTML = '<p class="fallback">The 3D view needs WebGL and could not start. The numbers on the right still update.</p>';
+    }
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
